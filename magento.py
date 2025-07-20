@@ -114,3 +114,121 @@ def test_create_an_account():
     sleep(2)
     close_browser(driver)
 
+def test_create_an_account_with_existing_email():
+    driver = open_site("https://magento.softwaretestingboard.com/")
+    sleep(2)
+    consent_button = driver.find_element(By.XPATH, "//p[text()='Consent']")
+    consent_button.click()
+    driver.find_element(By.XPATH, '//a[text()="Create an Account"]').click()
+    sleep(2)
+    # Fill out the form
+    driver.find_element(By.ID, "firstname").send_keys("Alice")
+    driver.find_element(By.ID, "lastname").send_keys("Tester")
+    unique_email = f"testuser@example.com"
+    driver.find_element(By.ID, "email_address").send_keys(unique_email)
+    driver.find_element(By.ID, "password").send_keys("P@ssword123")
+    driver.find_element(By.ID, "password-confirmation").send_keys("P@ssword123")
+    # Submit the form
+    driver.find_element(By.XPATH, "//button[@title='Create an Account']").click()
+    sleep(3)
+    # Check for unsuccessful account creation
+    error_elements = driver.find_elements(By.CSS_SELECTOR, "div[data-ui-id='message-error']")
+    assert len(error_elements) > 0, "Expected error message not shown for existing email"
+    error_text = error_elements[0].text.lower()
+    assert "already an account with this email" in error_text
+    print("Test passed: Account with existing email was not created, error message displayed.")
+    close_browser(driver)
+
+def test_login_with_valid_credentials():
+    driver = open_site("https://magento.softwaretestingboard.com/")
+    sleep(2)
+
+    try:
+        driver.find_element(By.XPATH, "//p[text()='Consent']").click()
+        sleep(1)
+    except:
+        pass
+
+    driver.find_element(By.LINK_TEXT, "Sign In").click()
+    sleep(2)
+
+    driver.find_element(By.ID, "email").send_keys("validuser1@example.com")
+    driver.find_element(By.ID, "pass").send_keys("ValidPass123")
+    driver.find_element(By.ID, "send2").click()
+    sleep(3)
+
+    # Assert successful login by checking if the "Welcome" message is visible
+    welcome_text_elements = driver.find_elements(By.XPATH, "//span[contains(text(), 'Welcome')]")
+    assert len(welcome_text_elements) > 0, "Login failed: Welcome message not displayed"
+    print("Test passed: Valid login successful, user is logged in")
+    close_browser(driver)
+
+def test_login_with_invalid_credentials():
+    driver = open_site("https://magento.softwaretestingboard.com/")
+    sleep(2)
+
+    try:
+        driver.find_element(By.XPATH, "//p[text()='Consent']").click()
+        sleep(1)
+    except:
+        pass
+
+    # driver.find_element(By.LINK_TEXT, "Sign In").click()
+    # driver.find_element(By.XPATH, '//a[text()="Sign In"]').click()
+    driver.find_element(By.XPATH, '//a[contains(text(), "Sign In")]').click()
+    sleep(2)
+    driver.find_element(By.ID, "email").send_keys("wrong@example.com")
+    driver.find_element(By.ID, "pass").send_keys("WrongPass123")
+    driver.find_element(By.ID, "send2").click()
+    sleep(2)
+
+    errors = driver.find_elements(By.CSS_SELECTOR, "div[data-ui-id='message-error']")
+    assert len(errors) > 0, "Expected login error not shown"
+    print("Test passed: Invalid login correctly shows an error")
+    close_browser(driver)
+
+def test_password_reset_flow():
+    driver = open_site("https://magento.softwaretestingboard.com/")
+    sleep(2)
+    try:
+        driver.find_element(By.XPATH, "//p[text()='Consent']").click()
+        sleep(1)
+    except:
+        pass
+
+    driver.find_element(By.XPATH, '//a[contains(text(), "Sign In")]').click()
+    sleep(2)
+    driver.find_element(By.LINK_TEXT, "Forgot Your Password?").click()
+    sleep(2)
+
+    driver.find_element(By.ID, "email_address").send_keys("nonexistent@example.com")
+    driver.find_element(By.CSS_SELECTOR, "button.action.submit.primary").click()
+    sleep(2)
+
+    messages = driver.find_elements(By.CSS_SELECTOR, "div[data-ui-id='message-success']")
+    assert len(messages) > 0, "Expected confirmation message not shown"
+    print("Test passed: Password reset for non-registered email shows an error")
+    close_browser(driver)
+
+def test_subscribe_link_opens_correct_url():
+    driver = open_site("https://magento.softwaretestingboard.com/")
+    sleep(2)
+
+    try:
+        driver.find_element(By.XPATH, "//p[text()='Consent']").click()
+        sleep(1)
+    except:
+        pass
+
+    # Scroll down to footer where "Subscribe" link is
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    sleep(2)
+
+    # Find the subscribe link
+    subscribe_link = driver.find_element(By.LINK_TEXT, "Subscribe")
+    href = subscribe_link.get_attribute("href")
+
+    # Assert the href contains the expected target URL
+    assert "softwaretestingboard.com/subscribe" in href, "Subscribe link URL is incorrect"
+    print("Test passed: Subscribe link is present and points to correct URL")
+    close_browser(driver)
